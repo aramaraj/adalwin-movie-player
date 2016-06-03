@@ -1,29 +1,64 @@
 package adalwin.com.adalwinvideo.activities;
 
+import android.app.Activity;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.os.Handler;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.MediaController;
+import android.widget.ProgressBar;
+import android.widget.VideoView;
 
 import com.loopj.android.http.AsyncHttpClient;
-import com.loopj.android.http.TextHttpResponseHandler;
 
 import adalwin.com.adalwinvideo.R;
-import adalwin.com.adalwinvideo.models.Movie;
-import adalwin.com.adalwinvideo.net.MovieDetailClient;
-import cz.msebera.android.httpclient.Header;
 
-public class VideoActivity extends AppCompatActivity {
-    private WebView myWebView;
+/*public class VideoActivity extends AppCompatActivity implements
+        SurfaceHolder.Callback,
+        MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnBufferingUpdateListener,
+        MediaPlayer.OnCompletionListener,
+        MediaPlayer.OnVideoSizeChangedListener,
+        MediaController.MediaPlayerControl {*/
+public class VideoActivity extends Activity{
+        private WebView myWebView;
     String movieUrl;
+    private MediaController mcontroller;
+    private Handler handler = new Handler();
+    boolean mIsVideoReadyToBePlayed;
+    private SurfaceHolder vidHolder;
+    private SurfaceView vidSurface;
+    String vidAddress = "http://75.126.5.180/einthusancom/cold/B2537.mp4?st=YyGmbCda4WbRwjNN_TVhYQ&e=1464743392";
+    MediaPlayer mediaPlayer;
+
+
+    ProgressBar progressBar1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_video);
         AsyncHttpClient client = new AsyncHttpClient();
+        VideoView vidView = (VideoView)findViewById(R.id.myVideo);
+        //myWebView.loadUrl("http://169.45.89.79/einthusancom/hot/D2914.mp4?st=uPsYnBL_isUoCaCNloojaQ&e=1464475016");
+        //vidSurface=(SurfaceView)findViewById(R.id.myVideo);
+
+        Uri vidUri = Uri.parse(vidAddress);
+
+        playVideo(vidUri,vidView);
+        /*handler = new Handler();
+        vidHolder = vidSurface.getHolder();
+        vidHolder.addCallback(this);
+        playVideo();*/
 
 
-        Movie book = (Movie) getIntent().getParcelableExtra("movieData");
+
+
+        /*Movie book = (Movie) getIntent().getParcelableExtra("movieData");
         MovieDetailClient.get(book.getOpenLibraryId().trim()+ "/hd/San%2CDallas%2CWashington%2CToronto%2CLondon%2CSydney/",new TextHttpResponseHandler() {
             @Override
             public void onStart() {
@@ -65,29 +100,151 @@ public class VideoActivity extends AppCompatActivity {
             public void onRetry(int retryNo) {
                 // called when request is retried
             }
-        });
+        });*/
+
+
+    }
 
 
 
-
-
-
-
-
-
+    private class MyBrowser extends WebViewClient {
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            view.loadUrl(url);
+            return true;
         }
+    }
+
+    private void playVideo(Uri vidUri, VideoView vidView) {
+        try {
+            vidView.setVideoURI(vidUri);
+            MediaController vidControl = new MediaController(this);
+            vidControl.setAnchorView(vidView);
+            vidView.setMediaController(vidControl);
+            vidView.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
-        private class MyBrowser extends WebViewClient {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
-                return true;
+   /* @Override
+    public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
+        // TODO Auto-generated method stub
+    }
+
+
+    private void playVideo() {
+        try {
+            mcontroller = new MediaController(this);
+            mediaPlayer = MediaPlayer.create(this, Uri.parse(vidAddress));
+            mediaPlayer.setOnBufferingUpdateListener(this);
+            mediaPlayer.setOnCompletionListener(this);
+            mediaPlayer.setOnPreparedListener(this);
+            mediaPlayer.setScreenOnWhilePlaying(true);
+            mediaPlayer.setOnVideoSizeChangedListener(this);
+            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        mcontroller.show();
+        return false;
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder arg0) {
+        mediaPlayer.setDisplay(vidHolder);
+        try {
+            mediaPlayer.start();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        // TODO Auto-generated method stub
+        progressBar1.setVisibility(View.GONE);
+        mcontroller.setMediaPlayer(this);
+        mcontroller.setAnchorView(findViewById(R.id.myVideo));
+        mcontroller.setEnabled(true);
+
+        handler.post(new Runnable() {
+            public void run() {
+                mcontroller.show();
             }
-        }
+        });
+    }
 
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        // TODO Auto-generated method stub
+    }
 
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        // TODO Auto-generated method stub
+    }
 
+    public void start() {
+        mediaPlayer.start();
+    }
 
+    public void pause() {
+        mediaPlayer.pause();
+    }
+
+    public int getDuration() {
+        return mediaPlayer.getDuration();
+    }
+
+    public int getCurrentPosition() {
+        return mediaPlayer.getCurrentPosition();
+    }
+
+    public void seekTo(int i) {
+        mediaPlayer.seekTo(i);
+    }
+
+    public boolean isPlaying() {
+        return mediaPlayer.isPlaying();
+    }
+
+    public int getBufferPercentage() {
+        return 0;
+    }
+
+    public boolean canPause() {
+        return true;
+    }
+
+    public boolean canSeekBackward() {
+        return true;
+    }
+
+    public boolean canSeekForward() {
+        return true;
+    }
+
+    @Override
+    public int getAudioSessionId() {
+        return 0;
+    }
+
+    @Override
+    public void surfaceDestroyed (SurfaceHolder holder)
+    {}
+*/
 
 }

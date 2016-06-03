@@ -14,6 +14,7 @@ import java.util.ArrayList;
 
 import adalwin.com.adalwinvideo.R;
 import adalwin.com.adalwinvideo.models.Movie;
+import jp.wasabeef.picasso.transformations.RoundedCornersTransformation;
 
 public class MovieAdapter extends ArrayAdapter<Movie> {
     // View lookup cache
@@ -49,7 +50,12 @@ public class MovieAdapter extends ArrayAdapter<Movie> {
         // Populate data into the template view using the data object
         viewHolder.tvTitle.setText(book.getTitle());
         viewHolder.tvAuthor.setText(book.getAuthor());
-        Picasso.with(getContext()).load(book.getPosterUrl()).into(viewHolder.ivCover);
+
+
+        Picasso.with(getContext()).load(book.getPosterUrl()).
+                transform(new RoundedCornersTransformation(10, 10)).into(viewHolder.ivCover);
+
+        //Picasso.with(getContext()).load(book.getPosterUrl()).into(viewHolder.ivCover);
         // Return the completed view to render on screen
         return convertView;
     }

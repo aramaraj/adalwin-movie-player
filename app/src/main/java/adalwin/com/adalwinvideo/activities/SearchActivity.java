@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -24,12 +25,15 @@ import adalwin.com.adalwinvideo.R;
 import adalwin.com.adalwinvideo.adapters.MovieAdapter;
 import adalwin.com.adalwinvideo.models.Movie;
 import adalwin.com.adalwinvideo.net.MovieClient;
+import adalwin.com.adalwinvideo.tools.EndlessRecylcerScrollerListener;
 import cz.msebera.android.httpclient.Header;
 
 public class SearchActivity extends AppCompatActivity {
     private ListView lvMovies;
     private MovieAdapter movieAdapter;
     private MovieClient client;
+    private String requestQuery="";
+    private int page = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,24 +55,43 @@ public class SearchActivity extends AppCompatActivity {
             }
         });
 
+
+        StaggeredGridLayoutManager gridLayoutManager =
+                new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+        gridLayoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_NONE);
+
+        lvMovies.setOnScrollListener(new EndlessRecylcerScrollerListener(){
+            @Override
+            public boolean onLoadMore(int page, int totalItemsCount) {
+                fetchMovies(requestQuery,page);
+                return true;
+            }
+            @Override
+            public int getFooterViewType() {
+                return 0;
+            }
+        });
+
+
         // Fetch the data remotely
-        fetchMovies("");
+        //fetchMovies(requestQuery,0);
 
     }
 
 
     // Executes an API call to the OpenLibrary search endpoint, parses the results
     // Converts them into an array of book objects and adds them to the adapter
-    private void fetchMovies(String query) {
+    private void fetchMovies(String query,int page) {
+        Toast.makeText(SearchActivity.this, "Inside"+String.valueOf(page)+" the text", Toast.LENGTH_SHORT).show();
+
         client = new MovieClient();
-        client.getMovies(query, new JsonHttpResponseHandler() {
+        client.getMovies(query,page,new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
 
                 try {
                     super.onSuccess(statusCode, headers,response);
                     JSONArray docs;
-                    System.out.println("The respose is "+response.toString());
 
 
                     if(response != null) {
@@ -84,6 +107,7 @@ public class SearchActivity extends AppCompatActivity {
                             movieAdapter.add(movie); // add book through the adapter
                         }
                         movieAdapter.notifyDataSetChanged();
+
                     }
                 } catch (Exception e) {
                     // Invalid JSON format, show appropriate error.
@@ -108,10 +132,12 @@ public class SearchActivity extends AppCompatActivity {
         MenuItem searchItem = menu.findItem(R.id.action_search);
         final SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
         searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
+
             @Override
             public boolean onQueryTextSubmit(String query) {
-                fetchMovies(query);
-                Toast.makeText(SearchActivity.this, "Inside the text", Toast.LENGTH_SHORT).show();
+                requestQuery=query;
+                fetchMovies(requestQuery,0);
+
                 // perform query here
                 // workaround to avoid issues with some emulators and keyboard devices firing twice if a keyboard enter is used
                 // see https://code.google.com/p/android/issues/detail?id=24599
@@ -154,4 +180,4 @@ public class SearchActivity extends AppCompatActivity {
 
 
 
-}
+    }
